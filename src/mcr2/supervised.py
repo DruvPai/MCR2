@@ -1,16 +1,12 @@
+import mcr2
 import opt_einsum
 import torch
-import typing
-
-from mcr2.computation_primitives import fft_input, logdet
-from mcr2.validity import Z_valid, Z_y_valid, Z_valid_order_2_no_invariance, \
-    Z_valid_order_3_shift_invariance, Z_valid_order_4_translation_invariance
 
 
 class SupervisedCodingRateCalculator:
     def __init__(self, eps_sq: float, invariance_type: str = None):
         self.eps_sq: float = eps_sq
-        self.invariance: str = invariance_type
+        self.invariance_type: str = invariance_type
 
     def compute_DeltaR(
             self,
@@ -18,7 +14,7 @@ class SupervisedCodingRateCalculator:
             y: torch.Tensor,
             input_in_fourier_basis: bool = False
     ):
-        assert (Z_y_valid(Z=Z, y=y, invariance_type=self.invariance))
+        assert (mcr2._validity.Z_y_valid(Z=Z, y=y, invariance_type=self.invariance_type))
         V: torch.Tensor = self._fft_input_if_necessary(
             Z=Z, input_in_fourier_basis=input_in_fourier_basis
         )
@@ -26,16 +22,18 @@ class SupervisedCodingRateCalculator:
                - self.compute_Rc(Z=V, y=y, input_in_fourier_basis=True)
 
     def compute_R(self, Z: torch.Tensor, input_in_fourier_basis: bool = False) -> torch.Tensor:
-        assert (Z_valid(Z=Z, invariance_type=self.invariance))
+        assert (mcr2._validity.Z_valid(Z=Z, invariance_type=self.invariance_type))
         V: torch.Tensor = self._fft_input_if_necessary(
             Z=Z,
             input_in_fourier_basis=input_in_fourier_basis
         )
-        if Z_valid_order_2_no_invariance(Z=Z, invariance_type=self.invariance):
+        if mcr2._validity.Z_valid_order_2_no_invariance(Z=Z, invariance_type=self.invariance_type):
             return self._compute_R_order_2_no_invariance(V=V)
-        elif Z_valid_order_3_shift_invariance(Z=Z, invariance_type=self.invariance):
+        elif mcr2._validity.Z_valid_order_3_shift_invariance(Z=Z,
+                                                             invariance_type=self.invariance_type):
             return self._compute_R_order_3_shift_invariance(V=V)
-        elif Z_valid_order_4_translation_invariance(Z=Z, invariance_type=self.invariance):
+        elif mcr2._validity.Z_valid_order_4_translation_invariance(Z=Z,
+                                                                   invariance_type=self.invariance_type):
             return self._compute_R_order_4_translation_invariance(V=V)
 
     def compute_Rc(
@@ -44,7 +42,7 @@ class SupervisedCodingRateCalculator:
             y: torch.Tensor,
             input_in_fourier_basis: bool = False,
     ) -> torch.Tensor:
-        assert (Z_y_valid(Z=Z, y=y, invariance_type=self.invariance))
+        assert (mcr2._validity.Z_y_valid(Z=Z, y=y, invariance_type=self.invariance_type))
         V: torch.Tensor = self._fft_input_if_necessary(
             Z=Z, input_in_fourier_basis=input_in_fourier_basis
         )
@@ -68,7 +66,7 @@ class SupervisedCodingRateCalculator:
         I: torch.Tensor = torch.eye(n=N, device=V.device)  # (N, N)
         cov: torch.Tensor = opt_einsum.contract("ji, jk -> ik", V, V.conj())  # (N, N)
         shifted_cov: torch.Tensor = I + alpha * cov  # (N, N)
-        return logdet(Z=shifted_cov) / 2  # ()
+        return mcr2._computation_primitives.logdet(Z=shifted_cov) / 2  # ()
 
     def _compute_R_order_3_shift_invariance(self, V: torch.Tensor) -> torch.Tensor:
         M: int = int(V.shape[0])
@@ -78,7 +76,9 @@ class SupervisedCodingRateCalculator:
         I: torch.Tensor = torch.eye(n=C, device=V.device).unsqueeze(0)  # (1, C, C)
         cov: torch.Tensor = opt_einsum.contract("jil, jkl -> lik", V, V.conj())  # (T, C, C)
         shifted_cov: torch.Tensor = I + alpha * cov  # (T, C, C)
-        return opt_einsum.contract("i -> ", logdet(Z=shifted_cov)).real / (2 * T)  # ()
+        return opt_einsum.contract("i -> ",
+                                   mcr2._computation_primitives.logdet(Z=shifted_cov)).real / (
+                       2 * T)  # ()
 
     def _compute_R_order_4_translation_invariance(self, V: torch.Tensor) -> torch.Tensor:
         M: int = int(V.shape[0])
@@ -89,13 +89,28 @@ class SupervisedCodingRateCalculator:
         I: torch.Tensor = torch.eye(n=C, device=V.device).unsqueeze(0)  # (1, 1, C, C)
         cov: torch.Tensor = opt_einsum.contract("jihw, jkhw -> hwik", V, V.conj())  # (H, W, C, C)
         shifted_cov: torch.Tensor = I + alpha * cov  # (H, W, C, C)
-        return opt_einsum.contract("ij -> ", logdet(Z=shifted_cov)).real / (2 * H * W)  # ()
+        return opt_einsum.contract("ij -> ",
+                                   mcr2._computation_primitives.logdet(Z=shifted_cov)).real / (
+                       2 * H * W)  # ()
 
     def _fft_input_if_necessary(self, Z: torch.Tensor,
                                 input_in_fourier_basis: bool = False) -> torch.Tensor:
         if input_in_fourier_basis or len(Z.shape) == 2:  # fourier transform is orthogonal
             return Z
         else:
-            return fft_input(Z=Z, invariance_type=self.invariance)
+            return mcr2._computation_primitives.fft_input(Z=Z, invariance_type=self.invariance_type)
 
-__all__ = ["SupervisedCodingRateCalculator"]
+
+class SupervisedMCR2Loss(torch.nn.Module):
+    def __init__(self, eps_sq: float, invariance_type: str):
+        super(SupervisedMCR2Loss, self).__init__()
+        self.coding_rate: mcr2._supervised_coding_rate_calculator.SupervisedCodingRateCalculator = \
+            mcr2._supervised_coding_rate_calculator.SupervisedCodingRateCalculator(
+                eps_sq=eps_sq, invariance_type=invariance_type
+            )
+
+    def forward(self, Z: torch.Tensor, y: torch.Tensor):
+        return -self.coding_rate.compute_DeltaR(Z=Z, y=y, input_in_fourier_basis=False)
+
+
+__all__ = ["SupervisedCodingRateCalculator", "SupervisedMCR2Loss"]
