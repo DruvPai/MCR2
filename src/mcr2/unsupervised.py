@@ -42,8 +42,7 @@ class UnsupervisedCodingRateCalculator:
 class UnsupervisedMCR2Loss(torch.nn.Module):
     def __init__(self, eps_sq: float, gamma: float):
         super(UnsupervisedMCR2Loss, self).__init__()
-        self.coding_rate: mcr2._unsupervised_coding_rate_calculator.UnsupervisedCodingRateCalculator = \
-            mcr2._unsupervised_coding_rate_calculator.UnsupervisedCodingRateCalculator(
+        self.coding_rate: UnsupervisedCodingRateCalculator = UnsupervisedCodingRateCalculator(
                 eps_sq=eps_sq
             )
         self.gamma: float = gamma

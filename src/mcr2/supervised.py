@@ -104,8 +104,7 @@ class SupervisedCodingRateCalculator:
 class SupervisedMCR2Loss(torch.nn.Module):
     def __init__(self, eps_sq: float, invariance_type: str):
         super(SupervisedMCR2Loss, self).__init__()
-        self.coding_rate: mcr2._supervised_coding_rate_calculator.SupervisedCodingRateCalculator = \
-            mcr2._supervised_coding_rate_calculator.SupervisedCodingRateCalculator(
+        self.coding_rate: SupervisedCodingRateCalculator = SupervisedCodingRateCalculator(
                 eps_sq=eps_sq, invariance_type=invariance_type
             )
 
