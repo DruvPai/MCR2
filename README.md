@@ -5,7 +5,7 @@ This repository is an unofficial implementation of the following paper,
 
 by [Kwan Ho Ryan Chan](https://ryanchankh.github.io)* (UC Berkeley), [Yaodong Yu](https://yaodongyu.github.io/)* (UC Berkeley), [Chong You](https://sites.google.com/view/cyou)* (UC Berkeley), [Haozhi Qi](https://haozhi.io/) (UC Berkeley), [John Wright](http://www.columbia.edu/~jw2966/) (Columbia), and [Yi Ma](http://people.eecs.berkeley.edu/~yima/) (UC Berkeley),
 
-which includes the implementations of the Maximal Coding Rate Reduction (**MCR<sup>2</sup>**) objective function part ([**MCR<sup>2</sup>** paper link](https://arxiv.org/abs/2006.08558)). This also serves as the host repository for the Pip package.
+which includes the implementations of the Maximal Coding Rate Reduction (**MCR<sup>2</sup>**) objective function part ([**MCR<sup>2</sup>** paper link](https://arxiv.org/abs/2006.08558)). **This also serves as the host repository for the Pip package (which is the main reason it exists).**
 
 ## What is Maximal Coding Rate Reduction? 
 Our goal is to learn a mapping that maps the high-dimensional data that lies in a low-dimensional manifold to low-dimensional subspaces with the following three properties: 
