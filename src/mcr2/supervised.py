@@ -29,11 +29,13 @@ class SupervisedCodingRateCalculator:
         )
         if mcr2._validity.Z_valid_order_2_no_invariance(Z=Z, invariance_type=self.invariance_type):
             return self._compute_R_order_2_no_invariance(V=V)
-        elif mcr2._validity.Z_valid_order_3_shift_invariance(Z=Z,
-                                                             invariance_type=self.invariance_type):
+        elif mcr2._validity.Z_valid_order_3_shift_invariance(
+                Z=Z, invariance_type=self.invariance_type
+        ):
             return self._compute_R_order_3_shift_invariance(V=V)
-        elif mcr2._validity.Z_valid_order_4_translation_invariance(Z=Z,
-                                                                   invariance_type=self.invariance_type):
+        elif mcr2._validity.Z_valid_order_4_translation_invariance(
+                Z=Z, invariance_type=self.invariance_type
+        ):
             return self._compute_R_order_4_translation_invariance(V=V)
 
     def compute_Rc(
@@ -76,9 +78,10 @@ class SupervisedCodingRateCalculator:
         I: torch.Tensor = torch.eye(n=C, device=V.device).unsqueeze(0)  # (1, C, C)
         cov: torch.Tensor = opt_einsum.contract("jil, jkl -> lik", V, V.conj())  # (T, C, C)
         shifted_cov: torch.Tensor = I + alpha * cov  # (T, C, C)
-        return opt_einsum.contract("i -> ",
-                                   mcr2._computation_primitives.logdet(Z=shifted_cov)).real / (
-                       2 * T)  # ()
+        return opt_einsum.contract(
+            "i -> ",
+            mcr2._computation_primitives.logdet(Z=shifted_cov)
+        ).real / (2 * T)  # ()
 
     def _compute_R_order_4_translation_invariance(self, V: torch.Tensor) -> torch.Tensor:
         M: int = int(V.shape[0])
@@ -89,9 +92,10 @@ class SupervisedCodingRateCalculator:
         I: torch.Tensor = torch.eye(n=C, device=V.device).unsqueeze(0)  # (1, 1, C, C)
         cov: torch.Tensor = opt_einsum.contract("jihw, jkhw -> hwik", V, V.conj())  # (H, W, C, C)
         shifted_cov: torch.Tensor = I + alpha * cov  # (H, W, C, C)
-        return opt_einsum.contract("ij -> ",
-                                   mcr2._computation_primitives.logdet(Z=shifted_cov)).real / (
-                       2 * H * W)  # ()
+        return opt_einsum.contract(
+            "ij -> ",
+            mcr2._computation_primitives.logdet(Z=shifted_cov)
+        ).real / (2 * H * W)  # ()
 
     def _fft_input_if_necessary(self, Z: torch.Tensor,
                                 input_in_fourier_basis: bool = False) -> torch.Tensor:
