@@ -51,7 +51,7 @@ class SupervisedCodingRateCalculator:
         classes: torch.Tensor = unique_outputs[0]  # (K, )
         counts: torch.Tensor = unique_outputs[1]  # (K, )
         gamma: torch.Tensor = counts / M  # (K, )
-        return 0.5 * sum(
+        return sum(
             gamma[i] *
             self.compute_R(  # ()
                 Z=V[y == classes[i]],  # (M_classes[j], dims),
