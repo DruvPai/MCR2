@@ -1,0 +1,4 @@
+from .abstract import AbstractSupervisedMCR2Loss
+from .vector import VectorSupervisedMCR2Loss
+from .shift_invariant import ShiftInvariantSupervisedMCR2Loss
+from .translation_invariant import TranslationInvariantSupervisedMCR2Loss
