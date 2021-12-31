@@ -67,3 +67,5 @@ class ReduBlock(torch.nn.Module):
 
     def get_losses_per_layer(self):
         return self.losses
+
+__all__ = ["ReduBlock"]

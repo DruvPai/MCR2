@@ -10,3 +10,5 @@ class CodingRate:
 
     def DeltaR(self, Z, Pi):
         raise NotImplementedError("Called DeltaR in basic coding rate class")
+
+__all__ = ["CodingRate"]

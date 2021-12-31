@@ -48,3 +48,5 @@ def normalize_2d(Z):  # (N, C, H, W)
     """
     N, C, H, W = Z.shape
     return torch.nn.functional.normalize(Z.reshape(N, C * H * W), dim=1).reshape(N, C, H, W)
+
+__all__ = ["normalize_vec", "normalize_1d", "normalize_2d", "normalize_frob"]

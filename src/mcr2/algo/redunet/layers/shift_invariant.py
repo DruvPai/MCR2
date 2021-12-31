@@ -87,3 +87,5 @@ class ShiftInvariantReduLayer(ReduLayer):
     def compute_mcr2(self, Z, Pi):
         with torch.no_grad():
             return (self.cr.DeltaR(Z, Pi), self.cr.R(Z), self.cr.Rc(Z, Pi))
+
+__all__ = ["ShiftInvariantReduLayer"]

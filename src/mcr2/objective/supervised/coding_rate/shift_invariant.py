@@ -73,3 +73,5 @@ class ShiftInvariantCodingRate(CodingRate):
             The coding rate reduction of Z with respect to Pi.
         """
         return self.R(Z) - self.Rc(Z, Pi)
+
+__all__ = ["ShiftInvariantCodingRate"]

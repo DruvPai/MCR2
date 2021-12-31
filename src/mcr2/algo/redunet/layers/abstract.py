@@ -43,3 +43,5 @@ class ReduLayer(pytorch_lightning.LightningModule):
         self.Cs = torch.nn.Parameter(Cs, requires_grad=self.Cs.requires_grad)
         if gam is not None:
             self.gam = torch.nn.Parameter(gam, requires_grad=False)
+
+__all__ = ["ReduLayer"]

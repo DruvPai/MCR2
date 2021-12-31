@@ -74,3 +74,9 @@ def gram_per_class_translation_invariant(Z, Pi):  # (N, C, H, W), (N, K)
         The class covariance tensor of Z data (K, H, W, C, C)
     """
     return opt_einsum.contract("nchw, ndhw, nk -> khwcd", Z, Z.conj(), Pi.to(torch.float))  # (N, C, H, W) x (N, C, H, W) x (N, K) -> (K, H, W, C, C)
+
+__all__ = [
+    "gram_vec", "gram_per_class_vec",
+    "gram_shift_invariant", "gram_per_class_shift_invariant",
+    "gram_translation_invariant", "gram_per_class_translation_invariant"
+]

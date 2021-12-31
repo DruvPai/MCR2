@@ -12,3 +12,5 @@ class AbstractSupervisedMCR2Loss(torch.nn.Module):
 
     def forward(self, Z, Pi):
         return -self.cr.DeltaR(Z, Pi)
+
+__all__ = ["AbstractSupervisedMCR2Loss"]
