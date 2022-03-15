@@ -1,5 +1,6 @@
 import torch
 
+
 def logdet(H):
     """
     Takes the log determinant of a (possible batch of) Hermitian matrix.
@@ -14,5 +15,6 @@ def logdet(H):
     log_diag_L = torch.log(diag_L)  # (*, D)
     tr_log_L = torch.sum(log_diag_L, dim=-1)  # (*, )
     return 2 * tr_log_L  # (*, )
+
 
 __all__ = ["logdet"]

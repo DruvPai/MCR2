@@ -29,4 +29,5 @@ def y_to_pi(y, K=-1):
     """
     return torch.nn.functional.one_hot(y, K)  # (N, K)
 
+
 __all__ = ["pi_to_y", "y_to_pi"]
