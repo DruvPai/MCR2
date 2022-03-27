@@ -30,7 +30,7 @@ class SupervisedMulticlassLDRLoss(SupervisedLDRLoss):
     def forward_unoptimized(self, Z, Z_hat, Pi):
         Z_per_class = [Z[Pi[:, i] == 1] for i in range(Pi.shape[1])]
         Z_hat_per_class = [Z_hat[Pi[:, i] == 1] for i in range(Pi.shape[1])]
-        return self.cr(Z) + self.cr(Z_hat) + \
+        return self.cr.DeltaR(Z, Pi) + self.cr.DeltaR(Z_hat, Pi) + \
                sum(self.cr.DeltaR_distance(Z_per_class[i], Z_hat_per_class[i]) for i in range(Pi.shape[1]))
 
 
