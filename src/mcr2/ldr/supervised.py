@@ -31,7 +31,7 @@ class SupervisedMulticlassLDRLoss(SupervisedLDRLoss):
         Z_per_class = [Z[Pi[:, i] == 1] for i in range(Pi.shape[1])]
         Z_hat_per_class = [Z_hat[Pi[:, i] == 1] for i in range(Pi.shape[1])]
         return self.cr.DeltaR(Z, Pi) + self.cr.DeltaR(Z_hat, Pi) + \
-               sum(self.cr.DeltaR_distance(Z_per_class[i], Z_hat_per_class[i]) for i in range(Pi.shape[1]))
+               sum((Z_per_class[i].shape[0] / Z.shape[0]) * self.cr.DeltaR_distance(Z_per_class[i], Z_hat_per_class[i]) for i in range(Pi.shape[1]))
 
 
 __all__ = ["SupervisedBinaryLDRLoss", "SupervisedMulticlassLDRLoss"]
