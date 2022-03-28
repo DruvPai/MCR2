@@ -121,7 +121,7 @@ class SupervisedShiftInvariantCodingRate(SupervisedCodingRate):
         beta = C / self.eps_sq  # ()
         I = torch.eye(C).view(1, C, C)  # (1, C, C)
         Sigma_hat_distorted = I + beta * Sigma_hat_data  # (T, C, C)
-        return torch.sum(F.logdet(Sigma_hat_distorted)) / 2.0  # ()
+        return torch.sum(F.logdet_complex(Sigma_hat_distorted)) / 2.0  # ()
 
     def R_per_class(self, Z, Pi):
         """
@@ -142,7 +142,7 @@ class SupervisedShiftInvariantCodingRate(SupervisedCodingRate):
         I = torch.eye(C).view(1, 1, C, C)  # (1, 1, C, C)
         Sigma_hat_distorted_per_class = I + beta * Sigma_hat_data_per_class  # (K, T, C, C)
         logdets_per_class = torch.sum(
-            F.logdet(Sigma_hat_distorted_per_class),  # (K, T)
+            F.logdet_complex(Sigma_hat_distorted_per_class),  # (K, T)
             dim=1
         )  # (K, )
         return logdets_per_class / 2.0  # ()
@@ -215,7 +215,7 @@ class SupervisedTranslationInvariantCodingRate(SupervisedCodingRate):
         beta = C / self.eps_sq
         I = torch.eye(C).view(1, 1, C, C)  # (1, 1, C, C)
         Sigma_hat_distorted = I + beta * Sigma_hat_data  # (H, W, C, C)
-        return torch.sum(F.logdet(Sigma_hat_distorted)) / 2.0  # ()
+        return torch.sum(F.logdet_complex(Sigma_hat_distorted)) / 2.0  # ()
 
     def R_per_class(self, Z, Pi):
         """
@@ -236,7 +236,7 @@ class SupervisedTranslationInvariantCodingRate(SupervisedCodingRate):
         I = torch.eye(C).view(1, 1, 1, C, C)  # (1, 1, 1, C, C)
         Sigma_hat_distorted_per_class = I + beta * Sigma_hat_data_per_class  # (K, H, W, C, C)
         logdets_per_class = torch.sum(
-            F.logdet(Sigma_hat_distorted_per_class),  # (K, H, W)
+            F.logdet_complex(Sigma_hat_distorted_per_class),  # (K, H, W)
             dim=(1, 2)
         )  # (K, )
         return logdets_per_class / 2.0  # (K, )

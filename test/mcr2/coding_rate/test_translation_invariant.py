@@ -18,7 +18,7 @@ def naive_R(Z):
     if n == 0:
         return F.logdet(I)
     alpha = c / (n * eps_sq)
-    return 0.5 * torch.sum(F.logdet(I + alpha * torch.einsum("nchw, ndhw -> hwcd", Z.conj(), Z)))
+    return 0.5 * torch.sum(F.logdet_complex(I + alpha * torch.einsum("nchw, ndhw -> hwcd", Z.conj(), Z)))
 
 
 def naive_Rc(Z, Pi):
