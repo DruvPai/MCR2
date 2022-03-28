@@ -1,8 +1,8 @@
-import torch
-import mcr2
-import mcr2.functional as F
 import unittest
 
+import mcr2
+import mcr2.functional as F
+import torch
 
 N = 50
 D = 30
@@ -12,8 +12,10 @@ K = 10
 def naive_R(Z, eps_sq):
     n, d = Z.shape
     I = torch.eye(d)
-    alpha = d / (n * eps_sq)
-    return 0.5 * F.logdet(I + alpha * Z.T @ Z.conj())
+    if n == 0:
+        return F.logdet(I)
+    alpha = d / eps_sq
+    return 0.5 * F.logdet(I + alpha * F.Sigma_hat_vec(Z))
 
 
 def naive_Rc(Z, Pi, eps_sq):
@@ -54,13 +56,13 @@ class TestVectorCodingRate(unittest.TestCase):
 
     def test_Rc(self):
         Z = torch.randn((N, D))
-        y = torch.randint(low=0, high=K, size=(N, ))
+        y = torch.randint(low=0, high=K, size=(N,))
         Pi = F.y_to_pi(y, K)
         self.assertTrue(torch.allclose(self.cr.Rc(Z, Pi), naive_Rc(Z, Pi, self.eps_sq)))
 
     def test_DeltaR(self):
         Z = torch.randn((N, D))
-        y = torch.randint(low=0, high=K, size=(N, ))
+        y = torch.randint(low=0, high=K, size=(N,))
         Pi = F.y_to_pi(y, K)
         self.assertTrue(torch.allclose(self.cr.DeltaR(Z, Pi), naive_DeltaR(Z, Pi, self.eps_sq)))
 
@@ -69,6 +71,11 @@ class TestVectorCodingRate(unittest.TestCase):
         Z2 = torch.randn((N - 1, D))
         self.assertTrue(torch.allclose(self.cr.DeltaR_distance(Z1, Z2), naive_DeltaR_distance(Z1, Z2, self.eps_sq)))
         self.assertTrue(torch.allclose(self.cr.DeltaR_distance(Z1, Z2), naive_DeltaR_distance2(Z1, Z2, self.eps_sq)))
+        Z1 = torch.randn((N, D))
+        Z2 = torch.randn((N, D))
+        self.assertTrue(torch.allclose(self.cr.DeltaR_distance(Z1, Z2), naive_DeltaR_distance(Z1, Z2, self.eps_sq)))
+        self.assertTrue(torch.allclose(self.cr.DeltaR_distance(Z1, Z2), naive_DeltaR_distance2(Z1, Z2, self.eps_sq)))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,87 +1,30 @@
-import matplotlib.pyplot as plt
-import torch
+import unittest
+
 import mcr2
 import mcr2.functional as F
-import pytorch_lightning as pl
+import torch
 
-C = 20
+C = 5
 T = 10
-d = 500
-N = 2000
+N = 200
+K = 10
+
+eps_sq = 0.5
+
+cr = mcr2.coding_rate.SupervisedShiftInvariantCodingRate(eps_sq)
 
 
-class SyntheticGaussianModel(pl.LightningModule):
-    def __init__(self):
-        super(SyntheticGaussianModel, self).__init__()
-        self.model = torch.nn.Sequential(
-            torch.nn.Flatten(),
-            torch.nn.Linear(C * T, d),
-            torch.nn.ReLU(),
-            torch.nn.Linear(d, d),
-            torch.nn.ReLU(),
-            torch.nn.Linear(d, C * T),
-            torch.nn.Unflatten(dim=1, unflattened_size=(C, T))
-        )
-        self.loss = mcr2.mcr2.SupervisedShiftInvariantMCR2Loss(0.5)
-        self.DeltaR_while_training = []
-
-    def forward(self, x):
-        return F.normalize_1d(self.model(x))
-
-    def training_step(self, batch, batch_idx):
-        x, y = batch
-        Pi = F.y_to_pi(y, 2)
-        z = self(x)
-        loss = self.loss(F.fft(z), Pi)
-        self.DeltaR_while_training.append(-loss.item())
-        return loss
-
-    def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=1e-3)
+def naive_MCR2_loss(Z, Pi):
+    return -cr.DeltaR(Z, Pi)
 
 
-class SyntheticDataModule(pl.LightningDataModule):
-    def __init__(self, batch_size):
-        super().__init__()
-        self.batch_size = batch_size
-        mu_0 = 5 * torch.ones(size=(C, T))
-        X_0 = torch.randn((N, C, T)) + mu_0
-        y_0 = torch.zeros((N,), dtype=torch.long)
-        mu_1 = -5 * torch.ones(size=(C, T))
-        X_1 = torch.randn((N, C, T)) + mu_1
-        y_1 = torch.ones((N,), dtype=torch.long)
-        X = torch.cat((X_0, X_1), dim=0)
-        y = torch.cat((y_0, y_1), dim=0)
-        self.dataset = torch.utils.data.TensorDataset(X, y)
-
-    def prepare_data(self):
-        pass
-
-    def setup(self, stage=None):
-        pass
-
-    def train_dataloader(self):
-        return torch.utils.data.DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
-
-    def val_dataloader(self):
-        return torch.utils.data.DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
-
-    def test_dataloader(self):
-        return torch.utils.data.DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
+class TestSupervisedVectorMCR2Loss(unittest.TestCase):
+    def test_forward(self):
+        Z = F.fft(torch.randn((N, C, T)))
+        Pi = F.y_to_pi(torch.randint(low=0, high=K, size=(N,)))
+        loss = mcr2.mcr2.SupervisedShiftInvariantMCR2Loss(eps_sq)
+        self.assertTrue(torch.allclose(loss.forward(Z, Pi), naive_MCR2_loss(Z, Pi)))
 
 
-def plot_DeltaR(model):
-    DeltaRs = model.DeltaR_while_training
-    steps = list(range(len(DeltaRs)))
-    plt.plot(steps, DeltaRs, label="DeltaR")
-    plt.legend()
-    plt.show()
-    plt.close()
-
-
-data_module = SyntheticDataModule(200)
-model = SyntheticGaussianModel()
-trainer = pl.Trainer(max_epochs=5)
-trainer.fit(model, data_module)
-
-plot_DeltaR(model)
+if __name__ == '__main__':
+    unittest.main()

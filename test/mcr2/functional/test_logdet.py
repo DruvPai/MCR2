@@ -1,11 +1,14 @@
+import unittest
+
+import torch
 from mcr2.functional import logdet as pkg_logdet
 from torch.linalg import slogdet
-import unittest
-import torch
 
 
 def naive_logdet(X):
-    return slogdet(X)[0] * slogdet(X)[1]
+    L = slogdet(X)
+    return L[0] * L[1]
+
 
 class TestLogdet(unittest.TestCase):
     n = 50

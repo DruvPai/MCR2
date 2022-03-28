@@ -1,5 +1,6 @@
 import torch
 
+
 def pi_to_y(Pi):
     """
     Turns a class membership matrix into a vector of class labels.
@@ -13,6 +14,7 @@ def pi_to_y(Pi):
         Pi,  # (N, K)
         dim=1
     )  # (N, )
+
 
 def y_to_pi(y, K=-1):
     """

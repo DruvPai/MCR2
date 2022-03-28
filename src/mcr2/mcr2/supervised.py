@@ -1,5 +1,6 @@
-import torch
 import mcr2
+import torch
+
 
 class SupervisedMCR2Loss(torch.nn.Module):
     def __init__(self, eps_sq):

@@ -1,8 +1,8 @@
-import torch
-import mcr2
-import mcr2.functional as F
 import unittest
 
+import mcr2
+import mcr2.functional as F
+import torch
 
 N = 50
 C = 30
@@ -13,8 +13,10 @@ K = 10
 def naive_R(Z, eps_sq):
     n, c, t = Z.shape
     I = torch.eye(c).unsqueeze(0)
+    if n == 0:
+        return F.logdet(I)
     alpha = c / (n * eps_sq)
-    return 0.5 * torch.sum(F.logdet(I + alpha * torch.einsum("nct, ndt -> tcd", Z, Z.conj())))
+    return 0.5 * torch.sum(F.logdet(I + alpha * torch.einsum("nct, ndt -> tcd", Z.conj(), Z)))
 
 
 def naive_Rc(Z, Pi, eps_sq):
@@ -50,24 +52,28 @@ class TestShiftInvariantCodingRate(unittest.TestCase):
     cr = mcr2.coding_rate.SupervisedShiftInvariantCodingRate(eps_sq)
 
     def test_R(self):
-        Z = torch.randn((N, C, T))
+        Z = F.fft(torch.randn((N, C, T)))
         self.assertTrue(torch.allclose(self.cr.R(Z), naive_R(Z, self.eps_sq)))
 
     def test_Rc(self):
-        Z = torch.randn((N, C, T))
-        y = torch.randint(low=0, high=K, size=(N, ))
+        Z = F.fft(torch.randn((N, C, T)))
+        y = torch.randint(low=0, high=K, size=(N,))
         Pi = F.y_to_pi(y, K)
         self.assertTrue(torch.allclose(self.cr.Rc(Z, Pi), naive_Rc(Z, Pi, self.eps_sq)))
 
     def test_DeltaR(self):
-        Z = torch.randn((N, C, T))
-        y = torch.randint(low=0, high=K, size=(N, ))
+        Z = F.fft(torch.randn((N, C, T)))
+        y = torch.randint(low=0, high=K, size=(N,))
         Pi = F.y_to_pi(y, K)
         self.assertTrue(torch.allclose(self.cr.DeltaR(Z, Pi), naive_DeltaR(Z, Pi, self.eps_sq)))
 
     def test_DeltaR_distance(self):
-        Z1 = torch.randn((N + 1, C, T))
-        Z2 = torch.randn((N - 1, C, T))
+        Z1 = F.fft(torch.randn((N + 1, C, T)))
+        Z2 = F.fft(torch.randn((N - 1, C, T)))
+        self.assertTrue(torch.allclose(self.cr.DeltaR_distance(Z1, Z2), naive_DeltaR_distance(Z1, Z2, self.eps_sq)))
+        self.assertTrue(torch.allclose(self.cr.DeltaR_distance(Z1, Z2), naive_DeltaR_distance2(Z1, Z2, self.eps_sq)))
+        Z1 = F.fft(torch.randn((N, C, T)))
+        Z2 = F.fft(torch.randn((N, C, T)))
         self.assertTrue(torch.allclose(self.cr.DeltaR_distance(Z1, Z2), naive_DeltaR_distance(Z1, Z2, self.eps_sq)))
         self.assertTrue(torch.allclose(self.cr.DeltaR_distance(Z1, Z2), naive_DeltaR_distance2(Z1, Z2, self.eps_sq)))
 

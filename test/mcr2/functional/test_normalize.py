@@ -1,7 +1,8 @@
+import unittest
+
+import torch
 from mcr2.functional import normalize_frob as pkg_normalize, normalize_vec, normalize_1d, normalize_2d
 from torch.linalg import norm
-import torch
-import unittest
 
 
 class TestNormalize(unittest.TestCase):

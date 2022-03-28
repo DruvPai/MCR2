@@ -28,54 +28,64 @@ class SupervisedVectorCodingRate(SupervisedCodingRate):
         Computes the coding rate of Z.
 
         Args:
-            Z: data matrix, (N x D)
+            Z: data matrix, (N, D)
 
         Returns:
-            The coding rate of Z.
+            The coding rate of Z, ().
         """
         N, D = Z.shape  # (N, D)
-        ZTZ = F.gram_vec(Z)  # (D, D)
-        alpha = D / (N * self.eps_sq)
+        Sigma_hat_data = F.Sigma_hat_vec(Z)  # (D, D)
+        beta = D / self.eps_sq  # ()
         I = torch.eye(D)  # (D, D)
-        Sigma_hat = I + alpha * ZTZ  # (D, D)
-        return F.logdet(Sigma_hat) / 2.0  # ()
+        Sigma_hat_distorted = I + beta * Sigma_hat_data  # (D, D)
+        return F.logdet(Sigma_hat_distorted) / 2.0  # ()
+
+    def R_per_class(self, Z, Pi):
+        """
+        Computes the coding rate of each class of Z as given by class information matrix Pi.
+
+        Args:
+            Z: data matrix, (N, D)
+            Pi: class matrix, (N, K)
+
+        Returns:
+            The coding rate of each class of Z, (K, ).
+        """
+        N, D = Z.shape  # (N, D)
+        Sigma_hat_data_per_class = F.Sigma_hat_per_class_vec(Z, Pi)  # (K, D, D)
+        beta = D / self.eps_sq  # ()
+        I = torch.eye(D).view(1, D, D)  # (D, D)
+        Sigma_hat_distorted_per_class = I + beta * Sigma_hat_data_per_class  # (K, D, D)
+        logdets_per_class = F.logdet(Sigma_hat_distorted_per_class)  # (K, )
+        return logdets_per_class / 2.0  # ()
 
     def Rc(self, Z, Pi):
         """
         Computes the segmented coding rate of Z with respect to a class information matrix Pi.
 
         Args:
-            Z: data matrix, (N x D)
-            Pi: class information matrix, (K x N)
+            Z: data matrix, (N, D)
+            Pi: class information matrix, (N, K)
 
         Returns:
-            The segmented coding rate of Z with respect to Pi.
+            The segmented coding rate of Z with respect to Pi, ().
         """
-        N, D = Z.shape  # (N, D)
         N, K = Pi.shape  # (N, K)
-        ZTZ_per_class = F.gram_per_class_vec(Z, Pi)  # (K, D, D)
         N_per_class = torch.sum(Pi, axis=0)  # (K, )
         gamma_per_class = N_per_class / N  # (K, )
-        alpha_per_class = torch.where(  # stops divide by 0 errors
-            N_per_class > 0.0,
-            D / (self.eps_sq * N_per_class),  # (K, )
-            torch.tensor(0.0)  # ()
-        )  # (K, )
-        I = torch.eye(D).view(1, D, D)  # (D, D)
-        Sigma_hat_per_class = I + alpha_per_class.view(K, 1, 1) * ZTZ_per_class  # (K, D, D)
-        logdets_per_class = F.logdet(Sigma_hat_per_class)  # (K, )
-        return torch.sum(gamma_per_class * logdets_per_class) / 2.0  # ()
+        Rs_per_class = self.R_per_class(Z, Pi)  # (K, )
+        return torch.sum(gamma_per_class * Rs_per_class)  # ()
 
     def DeltaR(self, Z, Pi):
         """
         Computes the coding rate reduction of Z with respect to a class information matrix Pi.
 
         Args:
-            Z: data matrix, (N x D)
-            Pi: class information matrix, (K x N)
+            Z: data matrix, (N, D)
+            Pi: class information matrix, (K, N)
 
         Returns:
-            The coding rate reduction of Z with respect to Pi.
+            The coding rate reduction of Z with respect to Pi, ().
         """
         return super().DeltaR(Z, Pi)
 
@@ -84,11 +94,11 @@ class SupervisedVectorCodingRate(SupervisedCodingRate):
         Computes the DeltaR distance between the two data point sets Z1 and Z2.
 
         Args:
-            Z1: data matrix, (N1 x D)
-            Z2: data matrix, (N2 x D)
+            Z1: data matrix, (N1, D)
+            Z2: data matrix, (N2, D)
 
         Returns:
-            The DeltaR distance between Z1 and Z2.
+            The DeltaR distance between Z1 and Z2, ().
         """
         return super().DeltaR_distance(Z1, Z2)
 
@@ -104,14 +114,38 @@ class SupervisedShiftInvariantCodingRate(SupervisedCodingRate):
             Z: data matrix, (N, C, T)
 
         Returns:
-            The coding rate of Z.
+            The coding rate of Z, ().
         """
         N, C, T = Z.shape  # (N, C, T)
-        ZTZ = F.gram_shift_invariant(Z)  # (T, C, C)
-        alpha = C / (N * self.eps_sq)
+        Sigma_hat_data = F.Sigma_hat_shift_invariant(Z)  # (T, C, C)
+        beta = C / self.eps_sq  # ()
         I = torch.eye(C).view(1, C, C)  # (1, C, C)
-        Sigma_hat = I + alpha * ZTZ  # (T, C, C)
-        return torch.sum(F.logdet(Sigma_hat)) / 2.0  # ()
+        Sigma_hat_distorted = I + beta * Sigma_hat_data  # (T, C, C)
+        return torch.sum(F.logdet(Sigma_hat_distorted)) / 2.0  # ()
+
+    def R_per_class(self, Z, Pi):
+        """
+        Computes the coding rate of each class of Z as given by class information matrix Pi.
+        NOTE: Only an accurate measure of the coding rate if the data is FFTed beforehand.
+        You can do this with mcr2.functional.fft(Z).
+
+        Args:
+            Z: data matrix, (N, C, T)
+            Pi: class matrix, (N, K)
+
+        Returns:
+            The coding rate of each class of Z, (K, ).
+        """
+        N, C, T = Z.shape  # (N, C, T)
+        Sigma_hat_data_per_class = F.Sigma_hat_per_class_shift_invariant(Z, Pi)  # (K, T, C, C)
+        beta = C / self.eps_sq  # ()
+        I = torch.eye(C).view(1, 1, C, C)  # (1, 1, C, C)
+        Sigma_hat_distorted_per_class = I + beta * Sigma_hat_data_per_class  # (K, T, C, C)
+        logdets_per_class = torch.sum(
+            F.logdet(Sigma_hat_distorted_per_class),  # (K, T)
+            dim=1
+        )  # (K, )
+        return logdets_per_class / 2.0  # ()
 
     def Rc(self, Z, Pi):
         """
@@ -124,25 +158,13 @@ class SupervisedShiftInvariantCodingRate(SupervisedCodingRate):
             Pi: class information matrix, (N, K)
 
         Returns:
-            The segmented coding rate of Z with respect to Pi.
+            The segmented coding rate of Z with respect to Pi, ().
         """
-        N, C, T = Z.shape  # (N, C, T)
         N, K = Pi.shape  # (N, K)
-        ZTZ_per_class = F.gram_per_class_shift_invariant(Z, Pi)  # (K, T, C, C)
         N_per_class = torch.sum(Pi, axis=0)  # (K, )
         gamma_per_class = N_per_class / N  # (K, )
-        alpha_per_class = torch.where(  # stops divide by 0 errors
-            N_per_class > 0,
-            C / (self.eps_sq * N_per_class),  # (K, )
-            torch.tensor(0.0)  # ()
-        )  # (K, )
-        I = torch.eye(C).view(1, 1, C, C)  # (1, 1, C, C)
-        Sigma_hat_per_class = I + alpha_per_class.view(K, 1, 1, 1) * ZTZ_per_class  # (K, T, C, C)
-        logdets_per_class = torch.sum(
-            F.logdet(Sigma_hat_per_class),  # (K, T)
-            dim=1
-        )  # (K, )
-        return torch.sum(gamma_per_class * logdets_per_class) / 2.0  # ()
+        Rs_per_class = self.R_per_class(Z, Pi)  # (K, )
+        return torch.sum(gamma_per_class * Rs_per_class)  # ()
 
     def DeltaR(self, Z, Pi):
         """
@@ -151,11 +173,11 @@ class SupervisedShiftInvariantCodingRate(SupervisedCodingRate):
         You can do this with mcr2.functional.fft(Z).
 
         Args:
-            Z: data matrix, (N x C x T)
-            Pi: class information matrix, (K x N)
+            Z: data matrix, (N, C, T)
+            Pi: class information matrix, (N, K)
 
         Returns:
-            The coding rate reduction of Z with respect to Pi.
+            The coding rate reduction of Z with respect to Pi, ().
         """
         return super().DeltaR(Z, Pi)
 
@@ -166,11 +188,11 @@ class SupervisedShiftInvariantCodingRate(SupervisedCodingRate):
         You can do this with mcr2.functional.fft(Z).
 
         Args:
-            Z1: data matrix, (N1 x C x T)
-            Z2: data matrix, (N2 x C x T)
+            Z1: data matrix, (N1, C, T)
+            Z2: data matrix, (N2, C, T)
 
         Returns:
-            The DeltaR distance between Z1 and Z2.
+            The DeltaR distance between Z1 and Z2, ().
         """
         return super().DeltaR_distance(Z1, Z2)
 
@@ -186,14 +208,38 @@ class SupervisedTranslationInvariantCodingRate(SupervisedCodingRate):
             Z: data matrix, (N, C, H, W)
 
         Returns:
-            The coding rate of Z.
+            The coding rate of Z, ().
         """
         N, C, H, W = Z.shape  # (N, C, H, W)
-        ZTZ = F.gram_translation_invariant(Z)  # (H, W, C, C)
-        alpha = C / (N * self.eps_sq)
+        Sigma_hat_data = F.Sigma_hat_translation_invariant(Z)  # (H, W, C, C)
+        beta = C / self.eps_sq
         I = torch.eye(C).view(1, 1, C, C)  # (1, 1, C, C)
-        Sigma_hat = I + alpha * ZTZ  # (H, W, C, C)
-        return torch.sum(F.logdet(Sigma_hat)) / 2.0  # ()
+        Sigma_hat_distorted = I + beta * Sigma_hat_data  # (H, W, C, C)
+        return torch.sum(F.logdet(Sigma_hat_distorted)) / 2.0  # ()
+
+    def R_per_class(self, Z, Pi):
+        """
+        Computes the coding rate of each class of Z as given by class information matrix Pi.
+        NOTE: Only an accurate measure of the coding rate if the data is FFTed beforehand.
+        You can do this with mcr2.functional.fft2(Z).
+
+        Args:
+            Z: data matrix, (N, C, H, W)
+            Pi: class matrix, (N, K)
+
+        Returns:
+            The coding rate of each class of Z, (K, ).
+        """
+        N, C, H, W = Z.shape  # (N, C, H, W)
+        Sigma_hat_data_per_class = F.Sigma_hat_per_class_translation_invariant(Z, Pi)  # (K, H, W, C, C)
+        beta = C / self.eps_sq  # ()
+        I = torch.eye(C).view(1, 1, 1, C, C)  # (1, 1, 1, C, C)
+        Sigma_hat_distorted_per_class = I + beta * Sigma_hat_data_per_class  # (K, H, W, C, C)
+        logdets_per_class = torch.sum(
+            F.logdet(Sigma_hat_distorted_per_class),  # (K, H, W)
+            dim=(1, 2)
+        )  # (K, )
+        return logdets_per_class / 2.0  # (K, )
 
     def Rc(self, Z, Pi):
         """
@@ -206,25 +252,13 @@ class SupervisedTranslationInvariantCodingRate(SupervisedCodingRate):
             Pi: class information matrix, (N, K)
 
         Returns:
-            The segmented coding rate of Z with respect to Pi.
+            The segmented coding rate of Z with respect to Pi, ().
         """
-        N, C, H, W = Z.shape  # (N, C, H, W)
         N, K = Pi.shape  # (N, K)
-        ZTZ_per_class = F.gram_per_class_translation_invariant(Z, Pi)  # (K, H, W, C, C)
         N_per_class = torch.sum(Pi, axis=0)  # (K, )
         gamma_per_class = N_per_class / N  # (K, )
-        alpha_per_class = torch.where(  # stops divide by 0 errors
-            N_per_class > 0,
-            C / (self.eps_sq * N_per_class),  # (K, )
-            torch.tensor(0.0)  # ()
-        )  # (K, )
-        I = torch.eye(C).view(1, 1, 1, C, C)  # (1, 1, 1, C, C)
-        Sigma_hat_per_class = I + alpha_per_class.view(K, 1, 1, 1, 1) * ZTZ_per_class  # (K, H, W, C, C)
-        logdets_per_class = torch.sum(
-            F.logdet(Sigma_hat_per_class),  # (K, H, W)
-            dim=(1, 2)
-        )  # (K, )
-        return torch.sum(gamma_per_class * logdets_per_class) / 2.0  # ()
+        Rs_per_class = self.R_per_class(Z, Pi)  # (K, )
+        return torch.sum(gamma_per_class * Rs_per_class)  # ()
 
     def DeltaR(self, Z, Pi):
         """
@@ -237,7 +271,7 @@ class SupervisedTranslationInvariantCodingRate(SupervisedCodingRate):
             Pi: class information matrix, (N, K)
 
         Returns:
-            The coding rate reduction of Z with respect to Pi.
+            The coding rate reduction of Z with respect to Pi, ().
         """
         return super().DeltaR(Z, Pi)
 
@@ -248,11 +282,11 @@ class SupervisedTranslationInvariantCodingRate(SupervisedCodingRate):
         You can do this with mcr2.functional.fft2(Z).
 
         Args:
-            Z1: data matrix, (N1 x C x H x W)
-            Z2: data matrix, (N2 x C x H x W)
+            Z1: data matrix, (N1, C, H, W)
+            Z2: data matrix, (N2, C, H, W)
 
         Returns:
-            The DeltaR distance between Z1 and Z2.
+            The DeltaR distance between Z1 and Z2, ().
         """
         return super().DeltaR_distance(Z1, Z2)
 
