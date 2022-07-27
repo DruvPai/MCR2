@@ -18,7 +18,9 @@ class SupervisedCodingRate:
     def DeltaR_distance(self, Z1, Z2):
         N1 = Z1.shape[0]
         N2 = Z2.shape[0]
-        N = max(1, N1 + N2)
+        N = N1 + N2
+        if N == 0:
+            return torch.tensor(0.0)
         return self.R(torch.cat(tensors=(Z1, Z2), dim=0)) - (N1 / N) * self.R(Z1) - (N2 / N) * self.R(Z2)
 
 
