@@ -1,18 +1,20 @@
-from torch import Tensor
-from torch.linalg import cholesky
+from torch import maximum, tensor, Tensor
+from torch.linalg import cholesky, eigvalsh
 
 
-def logdet_hpd(M: Tensor):
+def logdet_I_plus(M: Tensor):
     """
-    Computes the log determinant of a Hermitian PD matrix or batch of Hermitian PD matrices.
+    Computes the log determinant of a matrix or batch of matrices of the form I + M where M is Hermitian PSD.
 
     Args:
-        M: Tensor of shape (*, D, D); a batch of Hermitian PD matrices.
+        M: Tensor of shape (*, D, D); a batch of Hermitian PSD matrices.
 
     Returns:
-        Tensor of shape (*); the log-determinants of such Hermitian PD matrices.
+        Tensor of shape (*); the log-determinant(s) of I + M.
     """
-    return 2 * cholesky(M).diagonal(dim1=-2, dim2=-1).log().sum(-1)
+    ev = eigvalsh(M)  # (*, D)
+    ev = maximum(ev, tensor(0.0, device=M.device))  # (*, D)  # Numerical precision to prevent blowup
+    return (1 + ev).log().sum(dim=-1)  # (*)
 
 
-__all__ = ["logdet_hpd"]
+__all__ = ["logdet_I_plus"]

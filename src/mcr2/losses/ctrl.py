@@ -1,6 +1,6 @@
 from torch import cat, eye, Tensor
 
-from mcr2.primitives.logdet import logdet_hpd
+from mcr2.primitives.logdet import logdet_I_plus
 from mcr2.primitives.statistics import second_moment_class
 from mcr2.primitives.coding_rate import DeltaR_diff
 
@@ -33,11 +33,10 @@ def supervised_ctrl_loss(Z: Tensor, Zhat: Tensor, y_onehot: Tensor, eps: float):
 
     P_tot = cat((P, Phat, Pc, Phatc, Pcomc), dim=0)  # (3K + 2, D, D)
 
-    Q_tot = eye(D, device=Z.device).unsqueeze(0) + D / (eps ** 2) * P_tot  # (3K + 2, D, D)
-    ld_Q = logdet_hpd(Q_tot)  # (3K + 2, )
+    ld = logdet_I_plus(D / (eps ** 2) * P_tot)  # (3K + 2, )
 
     pi = pi.squeeze(-1).squeeze(-1)  # (K, )
-    return 0.5 * (ld_Q[0] + ld_Q[1] - ((pi + 0.5) * (ld_Q[2:K+2] + ld_Q[K+2:2*K+2])).sum() + ld_Q[2*K+2:].sum())  # ()
+    return 0.5 * (ld[0] + ld[1] - ((pi + 0.5) * (ld[2:K+2] + ld[K+2:2*K+2])).sum() + ld[2*K+2:].sum())  # ()
 
 
 def unsupervised_ctrl_loss(Z, Zhat, eps):

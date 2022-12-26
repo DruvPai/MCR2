@@ -5,7 +5,7 @@ from torch import cat, eye, randint, randn
 from torch.nn.functional import one_hot
 
 from mcr2.primitives.statistics import second_moment
-from mcr2.primitives.logdet import logdet_hpd
+from mcr2.primitives.logdet import logdet_I_plus
 from mcr2.primitives.coding_rate import R, Rc, DeltaR, DeltaR_diff, DeltaR_cdiff
 from test.utils import seed, assert_tensors_almost_equal
 
@@ -20,7 +20,7 @@ eps = 0.5
 
 def naive_R(Z, eps=eps):
     N, D = Z.shape
-    return 0.5 * logdet_hpd(eye(D) + D / (eps ** 2) * second_moment(Z))
+    return 0.5 * logdet_I_plus(D / (eps ** 2) * second_moment(Z))
 
 
 def naive_Rc(Z, y, eps=eps, K=K):

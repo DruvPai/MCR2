@@ -1,6 +1,7 @@
 from torch import cat, eye, maximum, stack, tensor, Tensor
+import torch
 
-from mcr2.primitives.logdet import logdet_hpd
+from mcr2.primitives.logdet import logdet_I_plus
 from mcr2.primitives.statistics import second_moment, second_moment_class
 
 
@@ -19,10 +20,9 @@ def R(Z: Tensor, eps: float):
 
     P = second_moment(Z)  # (D, D)
 
-    Q = eye(D, device=Z.device) + D / (eps ** 2) * P  # (D, D)
-    ld_Q = logdet_hpd(Q)   # ()
+    ld = logdet_I_plus(D / (eps ** 2) * P)  # ()
 
-    return 0.5 * ld_Q  # ()
+    return 0.5 * ld  # ()
 
 
 def Rc(Z: Tensor, y_onehot: Tensor, eps: float):
@@ -43,9 +43,9 @@ def Rc(Z: Tensor, y_onehot: Tensor, eps: float):
     pi = Nc / N  # (K, )
 
     P = second_moment_class(Z, y_onehot)  # (K, D, D)
-    Q = eye(D, device=Z.device).unsqueeze(0) + D / (eps ** 2) * P  # (K, D, D)
-    ld_Q = logdet_hpd(Q)  # (K, )
-    return 0.5 * (pi * ld_Q).sum()  # ()
+
+    ld = logdet_I_plus(D / (eps ** 2) * P)  # (K, )
+    return 0.5 * (pi * ld).sum()  # ()
 
 
 def DeltaR(Z: Tensor, y_onehot: Tensor, eps: float):
@@ -69,11 +69,10 @@ def DeltaR(Z: Tensor, y_onehot: Tensor, eps: float):
     P_com = (pi * P).sum(dim=0, keepdims=True)  # (1, D, D)
     P_tot = cat((P, P_com), dim=0)  # (K + 1, D, D)
 
-    Q_tot = eye(D, device=Z.device).unsqueeze(0) + D / (eps ** 2) * P_tot  # (K + 1, D, D)
-    ld_Q = logdet_hpd(Q_tot)  # (K + 1, )
+    ld = logdet_I_plus(D / (eps ** 2) * P_tot)  # (K + 1, )
 
     pi = pi.squeeze(-1).squeeze(-1)  # (K, )
-    return 0.5 * (ld_Q[-1] - (pi * ld_Q[:-1]).sum())  # ()
+    return 0.5 * (ld[-1] - (pi * ld[:-1]).sum())  # ()
 
 
 def DeltaR_diff(Z1: Tensor, Z2: Tensor, eps: float):
@@ -100,14 +99,13 @@ def DeltaR_diff(Z1: Tensor, Z2: Tensor, eps: float):
     P_com = (N * P_Z1 + M * P_Z2) / T  # (D, D)
     P_tot = stack((P_Z1, P_Z2, P_com), dim=0)  # (3, D, D)
 
-    Q_tot = eye(D, device=Z1.device).unsqueeze(0) + D / (eps ** 2) * P_tot  # (3, D, D)
-    ld_Q = logdet_hpd(Q_tot)  # (3, )
+    ld = logdet_I_plus(D / (eps ** 2) * P_tot)  # (3, )
 
     N = N.squeeze(-1).squeeze(-1)  # ()
     M = M.squeeze(-1).squeeze(-1)  # ()
     T = T.squeeze(-1).squeeze(-1)  # ()
 
-    return 0.5 * (ld_Q[2] - (N / T) * ld_Q[0] - (M / T) * ld_Q[1])  # ()
+    return 0.5 * (ld[2] - (N / T) * ld[0] - (M / T) * ld[1])  # ()
 
 
 def DeltaR_cdiff(Z1: Tensor, Z2: Tensor, y1_onehot: Tensor, y2_onehot: Tensor, eps: float):
@@ -136,14 +134,13 @@ def DeltaR_cdiff(Z1: Tensor, Z2: Tensor, y1_onehot: Tensor, y2_onehot: Tensor, e
     P_com = (Nc * P_Z1 + Mc * P_Z2) / Tc  # (K, D, D)
     P_tot = stack((P_Z1, P_Z2, P_com), dim=0)  # (3, K, D, D)
 
-    Q_tot = eye(D, device=Z1.device).unsqueeze(0).unsqueeze(0) + D / (eps ** 2) * P_tot  # (3, K, D, D)
-    ld_Q = logdet_hpd(Q_tot)  # (3, K)
+    ld = logdet_I_plus(D / (eps ** 2) * P_tot)  # (3, K)
 
     Nc = Nc.squeeze(-1).squeeze(-1)  # (K, )
     Mc = Mc.squeeze(-1).squeeze(-1)  # (K, )
-    Tc = Tc.squeeze(-1).squeeze(-1)  # (K, 1, 1)
+    Tc = Tc.squeeze(-1).squeeze(-1)  # (K, )
 
-    return 0.5 * (ld_Q[2] - (Nc / Tc) * ld_Q[0] - (Mc / Tc) * ld_Q[1]).sum()  # ()
+    return 0.5 * (ld[2] - (Nc / Tc) * ld[0] - (Mc / Tc) * ld[1]).sum()  # ()
 
 
 __all__ = ["R", "Rc", "DeltaR", "DeltaR_diff", "DeltaR_cdiff"]
