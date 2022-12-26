@@ -1,8 +1,8 @@
 from torch import cat, eye, Tensor
 
-from src.mcr2.primitives.logdet import logdet_hpd
-from src.mcr2.primitives.statistics import second_moment_class
-from src.mcr2.primitives.coding_rate import DeltaR_diff
+from mcr2.primitives.logdet import logdet_hpd
+from mcr2.primitives.statistics import second_moment_class
+from mcr2.primitives.coding_rate import DeltaR_diff
 
 
 def supervised_ctrl_loss(Z: Tensor, Zhat: Tensor, y_onehot: Tensor, eps: float):

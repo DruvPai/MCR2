@@ -3,8 +3,8 @@ from unittest import TestCase
 
 from torch import randint, randn, stack, zeros
 from torch.nn.functional import one_hot
-from src.mcr2.primitives.products import tensorized_ZtZ
-from src.mcr2.primitives.statistics import second_moment, second_moment_class, gramian
+from mcr2.primitives.products import tensorized_ZtZ
+from mcr2.primitives.statistics import second_moment, second_moment_class, gramian
 from test.utils import seed, assert_tensors_almost_equal
 
 

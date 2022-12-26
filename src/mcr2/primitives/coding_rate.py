@@ -1,7 +1,7 @@
 from torch import cat, eye, maximum, stack, tensor, Tensor
 
-from src.mcr2.primitives.logdet import logdet_hpd
-from src.mcr2.primitives.statistics import second_moment, second_moment_class
+from mcr2.primitives.logdet import logdet_hpd
+from mcr2.primitives.statistics import second_moment, second_moment_class
 
 
 def R(Z: Tensor, eps: float):

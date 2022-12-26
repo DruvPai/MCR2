@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from torch import randint, randn, stack, zeros
 from torch.nn.functional import one_hot
-from src.mcr2.primitives.products import tensorized_ZtZ, tensorized_ZtZ_class
+from mcr2.primitives.products import tensorized_ZtZ, tensorized_ZtZ_class
 from test.utils import seed, assert_tensors_almost_equal
 
 B = 6

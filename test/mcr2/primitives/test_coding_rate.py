@@ -4,9 +4,9 @@ from unittest import TestCase
 from torch import cat, eye, randint, randn
 from torch.nn.functional import one_hot
 
-from src.mcr2.primitives.statistics import second_moment
-from src.mcr2.primitives.logdet import logdet_hpd
-from src.mcr2.primitives.coding_rate import R, Rc, DeltaR, DeltaR_diff, DeltaR_cdiff
+from mcr2.primitives.statistics import second_moment
+from mcr2.primitives.logdet import logdet_hpd
+from mcr2.primitives.coding_rate import R, Rc, DeltaR, DeltaR_diff, DeltaR_cdiff
 from test.utils import seed, assert_tensors_almost_equal
 
 

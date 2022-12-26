@@ -1,6 +1,6 @@
 from torch import einsum, maximum, tensor, Tensor
 
-from src.mcr2.primitives.products import tensorized_ZtZ, tensorized_ZtZ_class
+from mcr2.primitives.products import tensorized_ZtZ, tensorized_ZtZ_class
 
 
 def second_moment(Z: Tensor):

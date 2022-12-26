@@ -1,6 +1,6 @@
 from torch import Tensor
 
-from src.mcr2.primitives.coding_rate import DeltaR
+from mcr2.primitives.coding_rate import DeltaR
 
 
 def supervised_mcr2_loss(Z: Tensor, y_onehot: Tensor, eps: float):

@@ -4,8 +4,8 @@ from unittest import TestCase
 from torch import randn, randint
 from torch.nn.functional import one_hot
 
-from src.mcr2.primitives.coding_rate import DeltaR
-from src.mcr2.losses.mcr2 import supervised_mcr2_loss
+from mcr2.primitives.coding_rate import DeltaR
+from mcr2.losses.mcr2 import supervised_mcr2_loss
 from test.utils import seed, assert_tensors_almost_equal
 
 N = 10

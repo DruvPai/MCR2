@@ -2,8 +2,8 @@ import unittest
 from unittest import TestCase
 
 from torch import eye, logdet, randn
-from src.mcr2.primitives.logdet import logdet_hpd
-from src.mcr2.primitives.statistics import second_moment
+from mcr2.primitives.logdet import logdet_hpd
+from mcr2.primitives.statistics import second_moment
 from test.utils import seed, assert_tensors_almost_equal
 
 B = 6
